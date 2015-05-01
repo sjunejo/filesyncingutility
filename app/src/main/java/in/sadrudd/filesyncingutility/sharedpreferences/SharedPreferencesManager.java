@@ -3,6 +3,8 @@ package in.sadrudd.filesyncingutility.sharedpreferences;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import in.sadrudd.filesyncingutility.utils.Constants;
+
 /**
  * Created by sjunjo on 22/02/2015.
  */
@@ -22,6 +24,10 @@ public class SharedPreferencesManager {
         return getSharedPreferences(context).getBoolean(SHARED_PREFERENCES_AUTOSTART, false);
     }
 
+    public static long getFolderSyncInterval(Context context){
+        return getSharedPreferences(context).getLong(SHARED_PREFERENCES_FOLDER_SYNC_INTERVAL,
+                Constants.DEFAULT_FOLDER_SYNC_INTERVAL);
+    }
 
 
 }

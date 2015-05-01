@@ -1,9 +1,16 @@
 package in.sadrudd.filesyncingutility.services;
 
 import android.app.Service;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+
+import in.sadrudd.filesyncingutility.sharedpreferences.SharedPreferencesManager;
+import in.sadrudd.filesyncingutility.utils.Constants;
 
 /**
  * - Keeps files synced
@@ -11,8 +18,9 @@ import android.os.IBinder;
  */
 public class CommService extends Service {
 
+
     // Debugging
-    private static final String TAG = "in.sadrudd.filesyncingutility.services.CommService";
+    private static final String DEBUG_TAG = "in.sadrudd.filesyncingutility.services.CommService";
 
     private final IBinder commServiceBinder = new CommServiceBinder();
 
@@ -36,6 +44,21 @@ public class CommService extends Service {
         return commServiceBinder;
     }
 
+
+    private void startBluetoothJob(){
+        JobInfo bluetoothJob = new JobInfo.Builder(Constants.BLUETOOTH_JOB_ID, new ComponentName(this, BluetoothService.class))
+                .setPeriodic(SharedPreferencesManager.
+                        getFolderSyncInterval(this)).build();
+
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(bluetoothJob);
+
+    }
+
+    private void stopBluetoothJob(){
+
+    }
+
     public class CommServiceBinder extends Binder {
 
         public CommService getService(){
@@ -43,5 +66,4 @@ public class CommService extends Service {
         }
 
     }
-
 }

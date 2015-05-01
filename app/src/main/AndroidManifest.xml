@@ -18,8 +18,13 @@
         </activity>
 
         <service
-            android:name=".services.BluetoothService"
+            android:name=".services.CommService"
             android:exported="false" >
+        </service>
+        <service
+            android:name=".services.BluetoothService"
+            android:enabled="true"
+            android:exported="true" >
         </service>
     </application>
 

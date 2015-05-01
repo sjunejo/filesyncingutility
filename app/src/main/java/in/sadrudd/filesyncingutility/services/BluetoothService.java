@@ -1,91 +1,51 @@
 package in.sadrudd.filesyncingutility.services;
 
-import android.app.IntentService;
-import android.content.Intent;
-import android.content.Context;
+import android.app.job.JobParameters;
+import android.app.job.JobService;
+import android.bluetooth.BluetoothAdapter;
+import android.util.Log;
 
-/**
- * An {@link IntentService} subclass for handling asynchronous task requests in
- * a service on a separate handler thread.
- * <p/>
- * TODO: Customize class - update intent actions, extra parameters and static
- * helper methods.
- */
-public class BluetoothService extends IntentService {
-    // TODO: Rename actions, choose action names that describe tasks that this
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
-    private static final String ACTION_FOO = "in.sadrudd.filesyncingutility.services.action.FOO";
-    private static final String ACTION_BAZ = "in.sadrudd.filesyncingutility.services.action.BAZ";
+public class BluetoothService extends JobService {
 
-    // TODO: Rename parameters
-    private static final String EXTRA_PARAM1 = "in.sadrudd.filesyncingutility.services.extra.PARAM1";
-    private static final String EXTRA_PARAM2 = "in.sadrudd.filesyncingutility.services.extra.PARAM2";
+    //TODO do something about the ID length!
+    private static final String ID = "in.sadrudd.filesync";
 
-    /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionFoo(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, BluetoothService.class);
-        intent.setAction(ACTION_FOO);
-        intent.putExtra(EXTRA_PARAM1, param1);
-        intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
+    private static final int REQUEST_ENABLE_BT = 42;
 
-    /**
-     * Starts this service to perform action Baz with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionBaz(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, BluetoothService.class);
-        intent.setAction(ACTION_BAZ);
-        intent.putExtra(EXTRA_PARAM1, param1);
-        intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
-
+    private BluetoothAdapter bluetoothAdapter;
     public BluetoothService() {
-        super("BluetoothService");
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            final String action = intent.getAction();
-            if (ACTION_FOO.equals(action)) {
-                final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                handleActionFoo(param1, param2);
-            } else if (ACTION_BAZ.equals(action)) {
-                final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                handleActionBaz(param1, param2);
-            }
+    public boolean onStartJob(JobParameters params) {
+        Log.i(ID, "Job started");
+        return false;
+    }
+
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        return false;
+    }
+
+    private boolean attemptBluetoothConnection(){
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter == null) {
+            // Device does not support Bluetooth
+            return false;
         }
+        if (bluetoothEnabledOnDevice()){
+            // TODO Check for paired connection and so on.
+        }
+        return true;
     }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(String param1, String param2) {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
+    private boolean bluetoothEnabledOnDevice(){
+        if (bluetoothAdapter.isEnabled())
+            return true;
 
-    /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionBaz(String param1, String param2) {
-        // TODO: Handle action Baz
-        throw new UnsupportedOperationException("Not yet implemented");
+        //Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        //this.startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
+
+        return false;
     }
 }
