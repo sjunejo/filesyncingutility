@@ -1,5 +1,7 @@
 package in.sadrudd.filesyncingutility;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -9,27 +11,44 @@ import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 
+import in.sadrudd.filesyncingutility.services.BluetoothService;
 import in.sadrudd.filesyncingutility.services.CommService;
+import in.sadrudd.filesyncingutility.sharedpreferences.SharedPreferencesManager;
+import in.sadrudd.filesyncingutility.utils.Constants;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements View.OnClickListener {
 
     private CommService commService;
 
 
     private boolean isBound = false;
 
+    private TextView tvSelectedDevice;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.bindService(new Intent(this, CommService.class), commServiceConnection,
+        bindService(new Intent(this, CommService.class), commServiceConnection,
                 Context.BIND_AUTO_CREATE);
+        initialiseUI();
     }
 
 
+    private void initialiseUI(){
+        initialiseTextViewSelectedDevice();
+
+    }
+
+    private void initialiseTextViewSelectedDevice(){
+        tvSelectedDevice = (TextView) findViewById(R.id.tvSelectedDevice);
+        tvSelectedDevice.setText(SharedPreferencesManager.getSelectedDeviceName(this));
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -53,6 +72,14 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void startBluetoothSelectDeviceJob(){
+        JobInfo selectBluetoothDeviceJob = new JobInfo.Builder(
+                Constants.BLUETOOTH_SELECT_DEVICE_JOB_ID,
+                new ComponentName(this, BluetoothService.class)).build();
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(selectBluetoothDeviceJob);
+
+    }
     private ServiceConnection commServiceConnection = new ServiceConnection() {
 
         /**
@@ -72,5 +99,14 @@ public class MainActivity extends ActionBarActivity {
 
         }
     };
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btnSelectDevice:
+
+                break;
+        }
+    }
 
 }

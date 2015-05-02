@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">File Syncing Utility</string>
 
-    <string name="hello_world">Hello world!</string>
+    <string name="heading_paired_device">Paired Device:</string>
+    <string name = "no_paired_device">None. Please select a Bluetooth device to share files with my
+    clicking the button below.</string>
+    <string name = "select_device">Select device</string>
     <string name="action_settings">Settings</string>
 </resources>

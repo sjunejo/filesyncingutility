@@ -24,6 +24,7 @@ public class CommService extends Service {
 
     private final IBinder commServiceBinder = new CommServiceBinder();
 
+    private JobScheduler jobScheduler;
 
     public CommService(){
 
@@ -44,19 +45,21 @@ public class CommService extends Service {
         return commServiceBinder;
     }
 
-
-    private void startBluetoothJob(){
-        JobInfo bluetoothJob = new JobInfo.Builder(Constants.BLUETOOTH_JOB_ID, new ComponentName(this, BluetoothService.class))
+    private void scheduleBluetoothJob(){
+        JobInfo bluetoothJob = new JobInfo.Builder(Constants.BLUETOOTH_SERVICE_JOB_ID, new ComponentName(this, BluetoothService.class))
                 .setPeriodic(SharedPreferencesManager.
-                        getFolderSyncInterval(this)).build();
+                        getFolderSyncInterval(this))
+                        .build();
 
-        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         jobScheduler.schedule(bluetoothJob);
+
+
 
     }
 
-    private void stopBluetoothJob(){
-
+    private void cancelBluetoothJob(){
+        jobScheduler.cancel(Constants.BLUETOOTH_SERVICE_JOB_ID);
     }
 
     public class CommServiceBinder extends Binder {
