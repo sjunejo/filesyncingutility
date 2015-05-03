@@ -1,23 +1,31 @@
 package in.sadrudd.filesyncingutility;
 
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import in.sadrudd.filesyncingutility.services.BluetoothService;
+import java.util.Set;
+
 import in.sadrudd.filesyncingutility.services.CommService;
 import in.sadrudd.filesyncingutility.sharedpreferences.SharedPreferencesManager;
-import in.sadrudd.filesyncingutility.utils.Constants;
+import in.sadrudd.filesyncingutility.ui.DeviceViewAdapter;
+import in.sadrudd.filesyncingutility.utils.BluetoothConnector;
 
 
 public class MainActivity extends ActionBarActivity implements View.OnClickListener {
@@ -28,7 +36,10 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private boolean isBound = false;
 
     private TextView tvSelectedDevice;
+    private ListView lvDevices;
+    private DeviceViewAdapter deviceViewAdapter;
 
+    private Button btnSelectDevice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +53,25 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     private void initialiseUI(){
         initialiseTextViewSelectedDevice();
+        initialiseListViewOfDevices();
+        initialiseButtons();
 
     }
 
     private void initialiseTextViewSelectedDevice(){
         tvSelectedDevice = (TextView) findViewById(R.id.tvSelectedDevice);
         tvSelectedDevice.setText(SharedPreferencesManager.getSelectedDeviceName(this));
+    }
+
+    private void initialiseListViewOfDevices(){
+        lvDevices = (ListView) findViewById(R.id.lvDevices);
+        lvDevices.setAdapter(deviceViewAdapter = new DeviceViewAdapter());
+
+    }
+
+    private void initialiseButtons(){
+        btnSelectDevice = (Button) findViewById(R.id.btnSelectDevice);
+        btnSelectDevice.setOnClickListener(this);
     }
 
     @Override
@@ -72,14 +96,28 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         return super.onOptionsItemSelected(item);
     }
 
-    private void startBluetoothSelectDeviceJob(){
-        JobInfo selectBluetoothDeviceJob = new JobInfo.Builder(
-                Constants.BLUETOOTH_SELECT_DEVICE_JOB_ID,
-                new ComponentName(this, BluetoothService.class)).build();
-        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        jobScheduler.schedule(selectBluetoothDeviceJob);
+    private void selectBluetoothDevice(){
+        if (BluetoothConnector.getInstance().isBluetoothEnabled()){
+            Set<BluetoothDevice> pairedDevices = BluetoothConnector.getInstance().getPairedDevices();
+            // But what if none is paired?
+            if (pairedDevices.size() > 0) {
+                for (BluetoothDevice pairedDevice : pairedDevices){
+                    deviceViewAdapter.addDevice(pairedDevice);
+
+                    Log.i("TAG", pairedDevice.getName());
+                }
+            }
+             Toast.makeText(this, "Going into discovery mode..", Toast.LENGTH_LONG).show();
+
+            startDiscoveryAndRegisterReceiver();
+
+        }
+        else {
+            Toast.makeText(this, "Bluetooth not enabled", Toast.LENGTH_LONG).show();
+        }
 
     }
+
     private ServiceConnection commServiceConnection = new ServiceConnection() {
 
         /**
@@ -100,13 +138,56 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         }
     };
 
+    private void startDiscoveryAndRegisterReceiver(){
+        // Discovery mode...
+        // Register the BroadcastReceiver
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        this.registerReceiver(bluetoothDiscoveryReceiver, filter);
+
+        BluetoothConnector.getInstance().startDiscovery();
+    }
+
+    // Create a BroadcastReceiver for ACTION_FOUND
+    private final BroadcastReceiver bluetoothDiscoveryReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            // When discovery finds a device
+
+            if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)){
+                Log.i("TAG", "Discovery started.");
+            }
+            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
+
+                Log.i("TAG", "Discovery finished.");
+                unregisterReceiver(this);
+            }
+            else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Get the BluetoothDevice object from the Intent
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                // Add the name and address to an array adapter to show in a ListView
+                Log.i("TAG", "Device found:" + device.getName());
+                deviceViewAdapter.addDevice(device);
+
+            }
+        }
+    };
+
+
     @Override
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.btnSelectDevice:
-
+                selectBluetoothDevice();
                 break;
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        this.unregisterReceiver(bluetoothDiscoveryReceiver);
+        BluetoothConnector.getInstance().stopDiscovery();
+        super.onDestroy();
+    }
 }
